@@ -40,7 +40,18 @@ async function initializeGenAI() {
 }
 
 const app = express();
-app.use(cors());
+
+// CORS Configuration for production
+const corsOptions = {
+    origin: [
+        'http://localhost:3000',
+        'http://localhost:5000',
+        process.env.FRONTEND_URL || 'https://skill-swap-e15a9.web.app'
+    ],
+    credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Create uploads folder for projects
@@ -549,7 +560,7 @@ app.post('/qna', async (req, res) => {
     }
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 // Start server function
 async function startServer() {

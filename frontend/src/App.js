@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// API Configuration
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
 function App() {
     // ========== STATE VARIABLES ==========
     const [users, setUsers] = useState([]);
@@ -64,7 +67,7 @@ function App() {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/users');
+            const response = await fetch(`${API_BASE_URL}/users`);
             const data = await response.json();
             setUsers(data);
             setError(null);
@@ -87,7 +90,7 @@ const generateTest = async () => {
     try {
         const prompt = `Generate up to 10 multiple-choice questions (4 options each) based on these skills: ${skillsForTest}.`;
 
-        const response = await fetch('http://localhost:5000/qna', {
+        const response = await fetch(`${API_BASE_URL}/qna`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ question: prompt })
@@ -148,7 +151,7 @@ const generateTest = async () => {
                 answers.push(testAnswers[i]);
             }
             
-            const response = await fetch('http://localhost:5000/submit-test', {
+            const response = await fetch(`${API_BASE_URL}/submit-test`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ answers })
@@ -178,7 +181,7 @@ const generateTest = async () => {
         setLoading(true);
         
         try {
-            const response = await fetch('http://localhost:5000/register', {
+            const response = await fetch(`${API_BASE_URL}/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
@@ -236,7 +239,7 @@ const generateTest = async () => {
         
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/upload-project', {
+            const response = await fetch(`${API_BASE_URL}/upload-project`, {
                 method: 'POST',
                 body: formData
             });
@@ -262,7 +265,7 @@ const generateTest = async () => {
         
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/request-swap', {
+            const response = await fetch(`${API_BASE_URL}/request-swap`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -290,7 +293,7 @@ const generateTest = async () => {
     const acceptSwap = async (requestId) => {
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/accept-swap', {
+            const response = await fetch(`${API_BASE_URL}/accept-swap`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -320,7 +323,7 @@ const generateTest = async () => {
         setView('chat');
         
         try {
-            const response = await fetch(`http://localhost:5000/chat-messages/${session.id}`);
+            const response = await fetch(`${API_BASE_URL}/chat-messages/${session.id}`);
             const data = await response.json();
             setChatMessages(data);
         } catch (err) {
@@ -335,7 +338,7 @@ const generateTest = async () => {
         const otherParticipant = activeChat.participants.find(id => id !== currentUser.id);
         
         try {
-            const response = await fetch('http://localhost:5000/send-message', {
+            const response = await fetch(`${API_BASE_URL}/send-message`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -366,7 +369,7 @@ const generateTest = async () => {
         
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:5000/submit-rating', {
+            const response = await fetch(`${API_BASE_URL}/submit-rating`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
