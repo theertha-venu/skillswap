@@ -481,6 +481,8 @@ app.get('/users', (req, res) => {
         baseMark: user.baseMark || 0,
         credits: user.credits || 0,
         projects: user.projects || [],
+        pendingRequests: user.pendingRequests || [],
+        acceptedSessions: user.acceptedSessions || [],
         averageRating: ratings.filter(r => r.toUserId === user.id).reduce((sum, r) => sum + r.rating, 0) / 
                       (ratings.filter(r => r.toUserId === user.id).length || 1)
     }));
