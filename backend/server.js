@@ -353,26 +353,34 @@ app.post('/accept-swap', (req, res) => {
         if (request) {
             request.status = 'accepted';
             
-            // Create chat session
-            const chatSession = {
-                id: Date.now(),
-                participants: [request.fromUser.id, request.toUser.id],
-                requestId: request.id,
-                messages: [],
-                createdAt: new Date().toISOString()
-            };
+            // Check if session already exists for this request
+            let chatSession = user.acceptedSessions?.find(s => s.requestId === requestId);
             
-            user.acceptedSessions = user.acceptedSessions || [];
-            user.acceptedSessions.push(chatSession);
+            if (!chatSession) {
+                // Create chat session only if it doesn't exist
+                chatSession = {
+                    id: Date.now(),
+                    participants: [request.fromUser.id, request.toUser.id],
+                    requestId: request.id,
+                    messages: [],
+                    createdAt: new Date().toISOString()
+                };
+                
+                user.acceptedSessions = user.acceptedSessions || [];
+                user.acceptedSessions.push(chatSession);
+                
+                const fromUser = users.find(u => u.id === request.fromUser.id);
+                if (fromUser) {
+                    fromUser.acceptedSessions = fromUser.acceptedSessions || [];
+                    // Only add if not already there
+                    if (!fromUser.acceptedSessions.find(s => s.requestId === requestId)) {
+                        fromUser.acceptedSessions.push(chatSession);
+                    }
+                }
+            }
             
             // Remove from pending requests
             user.pendingRequests = (user.pendingRequests || []).filter(r => r.id !== requestId);
-            
-            const fromUser = users.find(u => u.id === request.fromUser.id);
-            if (fromUser) {
-                fromUser.acceptedSessions = fromUser.acceptedSessions || [];
-                fromUser.acceptedSessions.push(chatSession);
-            }
             
             res.json({ 
                 message: "Request accepted! Chat is now available.",
