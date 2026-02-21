@@ -365,6 +365,9 @@ app.post('/accept-swap', (req, res) => {
             user.acceptedSessions = user.acceptedSessions || [];
             user.acceptedSessions.push(chatSession);
             
+            // Remove from pending requests
+            user.pendingRequests = (user.pendingRequests || []).filter(r => r.id !== requestId);
+            
             const fromUser = users.find(u => u.id === request.fromUser.id);
             if (fromUser) {
                 fromUser.acceptedSessions = fromUser.acceptedSessions || [];
@@ -373,7 +376,8 @@ app.post('/accept-swap', (req, res) => {
             
             res.json({ 
                 message: "Request accepted! Chat is now available.",
-                chatSession
+                chatSession,
+                user: user
             });
         } else {
             res.status(404).json({ error: "Request not found!" });
