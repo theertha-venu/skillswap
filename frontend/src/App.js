@@ -77,6 +77,28 @@ function App() {
         setLoading(false);
     };
 
+    // Fetch current user's latest data (including pending requests and active sessions)
+    const fetchCurrentUserData = async () => {
+        if (!currentUser) return;
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/${currentUser.id}`);
+            if (response.ok) {
+                const updatedUser = await response.json();
+                setCurrentUser(updatedUser);
+                localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+            }
+        } catch (err) {
+            console.error('Failed to fetch current user data');
+        }
+    };
+
+    // Refresh user data when viewing profile
+    useEffect(() => {
+        if (view === 'profile' && currentUser) {
+            fetchCurrentUserData();
+        }
+    }, [view, currentUser?.id]);
+
     // Generate AI test questions via `/qna` (asks the generative endpoint to return JSON)
 const generateTest = async () => {
     if (!skillsForTest.trim()) {
@@ -302,14 +324,16 @@ const generateTest = async () => {
                 })
             });
             
+            const data = await response.json();
+            
             if (response.ok) {
                 alert('✅ Request accepted! You can now chat.');
-                fetchUsers();
-                const updatedUser = users.find(u => u.id === currentUser.id);
-                if (updatedUser) {
-                    setCurrentUser(updatedUser);
-                    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+                // Use the returned user data
+                if (data.user) {
+                    setCurrentUser(data.user);
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
                 }
+                fetchUsers();
             }
         } catch (err) {
             setError('Failed to accept request');
