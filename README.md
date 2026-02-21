@@ -2,11 +2,11 @@
 
 ## Basic Details
 
-### Team Name: [Your Team Name]
+### Team Name: NEXA
 
 ### Team Members
-- Member 1: [Your Name] - [Your College]
-- Member 2: [Team Member Name] - [Their College]
+- Member 1: Theertha Venu - College  of engineering Kalloppara
+- Member 2: Devika Manoj - College  of engineering Kalloppara
 
 ### Hosted Project Link
 *Currently running locally at http://localhost:3000*
