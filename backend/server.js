@@ -353,11 +353,18 @@ app.post('/accept-swap', (req, res) => {
         if (request) {
             request.status = 'accepted';
             
-            // Check if session already exists for this request
-            let chatSession = user.acceptedSessions?.find(s => s.requestId === requestId);
+            // Check if session already exists for this request pair
+            const existingSession = user.acceptedSessions?.find(s => 
+                s.requestId === requestId || 
+                (s.participants.includes(request.fromUser.id) && s.participants.includes(request.toUser.id))
+            );
             
-            if (!chatSession) {
-                // Create chat session only if it doesn't exist
+            let chatSession;
+            if (existingSession) {
+                // Session already exists
+                chatSession = existingSession;
+            } else {
+                // Create new chat session
                 chatSession = {
                     id: Date.now(),
                     participants: [request.fromUser.id, request.toUser.id],
@@ -480,24 +487,31 @@ app.get('/user-ratings/:userId', (req, res) => {
 
 // GET ALL USERS
 app.get('/users', (req, res) => {
-    const publicUsers = users.map(user => ({
-        id: user.id,
-        name: user.name,
-        skillsToTeach: user.skillsToTeach,
-        skillsToLearn: user.skillsToLearn,
-        githubUsername: user.githubUsername,
-        linkedinUrl: user.linkedinUrl,
-        githubScore: user.githubScore || 0,
-        linkedinScore: user.linkedinScore || 0,
-        mcqScore: user.mcqScore || 0,
-        baseMark: user.baseMark || 0,
-        credits: user.credits || 0,
-        projects: user.projects || [],
-        pendingRequests: user.pendingRequests || [],
-        acceptedSessions: user.acceptedSessions || [],
-        averageRating: ratings.filter(r => r.toUserId === user.id).reduce((sum, r) => sum + r.rating, 0) / 
-                      (ratings.filter(r => r.toUserId === user.id).length || 1)
-    }));
+    const publicUsers = users.map(user => {
+        const userRatings = ratings.filter(r => r.toUserId === user.id);
+        const avgRating = userRatings.length > 0
+            ? userRatings.reduce((sum, r) => sum + r.rating, 0) / userRatings.length
+            : 0;
+        
+        return {
+            id: user.id,
+            name: user.name,
+            skillsToTeach: user.skillsToTeach,
+            skillsToLearn: user.skillsToLearn,
+            githubUsername: user.githubUsername,
+            linkedinUrl: user.linkedinUrl,
+            githubScore: user.githubScore || 0,
+            linkedinScore: user.linkedinScore || 0,
+            mcqScore: user.mcqScore || 0,
+            baseMark: user.baseMark || 0,
+            credits: user.credits || 0,
+            projects: user.projects || [],
+            pendingRequests: user.pendingRequests || [],
+            acceptedSessions: user.acceptedSessions || [],
+            ratings: userRatings,
+            averageRating: avgRating
+        };
+    });
     
     res.json(publicUsers);
 });
