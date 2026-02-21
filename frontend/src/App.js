@@ -11,6 +11,7 @@ function App() {
     const [error, setError] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [view, setView] = useState('home');
+    const [selectedViewUser, setSelectedViewUser] = useState(null); // For viewing other users' profiles
     
     // Form data
     const [formData, setFormData] = useState({
@@ -96,6 +97,10 @@ function App() {
     useEffect(() => {
         if (view === 'profile' && currentUser) {
             fetchCurrentUserData();
+            
+            // Poll for updates every 3 seconds while on profile page
+            const interval = setInterval(fetchCurrentUserData, 3000);
+            return () => clearInterval(interval);
         }
     }, [view, currentUser?.id]);
 
@@ -410,8 +415,10 @@ const generateTest = async () => {
                 setRatingSession(null);
                 setRatingValue(5);
                 setRatingReview('');
-                setView('home');
-                fetchUsers();
+                // Refresh both users list and current user data
+                await fetchUsers();
+                await fetchCurrentUserData();
+                setView('profile');
             }
         } catch (err) {
             setError('Failed to submit rating');
@@ -503,9 +510,20 @@ const generateTest = async () => {
                             </div>
                             
                             {currentUser && currentUser.id !== user.id && (
-                                <div className="card-footer">
+                                <div className="card-footer" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    <button 
+                                        className="btn btn-info"
+                                        onClick={() => {
+                                            setSelectedViewUser(user);
+                                            setView('public-profile');
+                                        }}
+                                        style={{ flex: 1, minWidth: '120px' }}
+                                    >
+                                        👁️ View Profile
+                                    </button>
+                                    
                                     {selectedUser === user.id ? (
-                                        <div className="swap-form">
+                                        <div className="swap-form" style={{ flex: 1, minWidth: '300px' }}>
                                             <input
                                                 type="text"
                                                 placeholder="Skill you'll teach"
@@ -535,6 +553,7 @@ const generateTest = async () => {
                                         <button 
                                             className="btn btn-primary"
                                             onClick={() => setSelectedUser(user.id)}
+                                            style={{ flex: 1, minWidth: '120px' }}
                                         >
                                             Request Swap
                                         </button>
@@ -738,6 +757,10 @@ const generateTest = async () => {
                     <h3>Projects</h3>
                     <p className="stat-value">{currentUser.projects?.length || 0}</p>
                 </div>
+                <div className="stat-card">
+                    <h3>⭐ Rating</h3>
+                    <p className="stat-value">{currentUser.averageRating ? currentUser.averageRating.toFixed(1) : 'New'}/5</p>
+                </div>
             </div>
             
             <div className="profile-section">
@@ -764,6 +787,21 @@ const generateTest = async () => {
                     <div>AI Test: +{currentUser.mcqScore || 0}</div>
                     <div className="total">Total: {currentUser.baseMark}/10</div>
                 </div>
+            </div>
+
+            <div className="profile-section">
+                <h3>⭐ My Reviews & Ratings</h3>
+                {users.filter(u => u.id === currentUser.id)[0]?.ratings && users.filter(u => u.id === currentUser.id)[0].ratings.length > 0 ? (
+                    users.filter(u => u.id === currentUser.id)[0].ratings.map(rating => (
+                        <div key={rating.id} className="review-card">
+                            <p><strong>⭐ Rating:</strong> {rating.rating}/5</p>
+                            {rating.review && <p><strong>Review:</strong> {rating.review}</p>}
+                            <small>Reviewed by User #{rating.fromUserId}</small>
+                        </div>
+                    ))
+                ) : (
+                    <p>No reviews yet. Get started by swapping skills!</p>
+                )}
             </div>
             
             <div className="profile-section">
@@ -841,6 +879,118 @@ const generateTest = async () => {
             </div>
         </div>
     );
+
+    // Public Profile View (viewing other users)
+    const renderPublicProfile = () => {
+        if (!selectedViewUser) return null;
+        
+        return (
+            <div className="profile-container">
+                <button 
+                    className="btn btn-secondary"
+                    onClick={() => {
+                        setSelectedViewUser(null);
+                        setView('home');
+                    }}
+                    style={{ marginBottom: '20px' }}
+                >
+                    ← Back to Browse
+                </button>
+
+                <h2>👤 {selectedViewUser.name}'s Profile</h2>
+                
+                <div className="profile-stats">
+                    <div className="stat-card">
+                        <h3>BaseMark</h3>
+                        <p className="stat-value">{selectedViewUser.baseMark}/10</p>
+                    </div>
+                    <div className="stat-card">
+                        <h3>Credits</h3>
+                        <p className="stat-value">{selectedViewUser.credits || 0}</p>
+                    </div>
+                    <div className="stat-card">
+                        <h3>Projects</h3>
+                        <p className="stat-value">{selectedViewUser.projects?.length || 0}</p>
+                    </div>
+                    <div className="stat-card">
+                        <h3>⭐ Rating</h3>
+                        <p className="stat-value">{selectedViewUser.averageRating ? selectedViewUser.averageRating.toFixed(1) : 'New'}/5</p>
+                    </div>
+                </div>
+
+                <div className="profile-section">
+                    <h3>📊 Skills</h3>
+                    <div className="profile-details">
+                        <p><strong>Skills to Teach:</strong> {selectedViewUser.skillsToTeach.join(', ') || 'None'}</p>
+                        <p><strong>Skills to Learn:</strong> {selectedViewUser.skillsToLearn.join(', ') || 'None'}</p>
+                    </div>
+                </div>
+
+                <div className="profile-section">
+                    <h3>📁 Projects</h3>
+                    {selectedViewUser.projects?.length > 0 ? (
+                        <div>
+                            {selectedViewUser.projects.map(project => (
+                                <div key={project.filename} style={{ 
+                                    padding: '10px', 
+                                    border: '1px solid #ddd', 
+                                    marginBottom: '10px',
+                                    borderRadius: '5px'
+                                }}>
+                                    <p><strong>📄 {project.originalName}</strong></p>
+                                    <a href={`${API_BASE_URL}${project.path}`} target="_blank" rel="noopener noreferrer" className="btn btn-small">
+                                        Download
+                                    </a>
+                                    <small style={{ display: 'block', marginTop: '5px' }}>
+                                        Uploaded: {new Date(project.uploadedAt).toLocaleDateString()}
+                                    </small>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p>No projects uploaded yet</p>
+                    )}
+                </div>
+
+                <div className="profile-section">
+                    <h3>⭐ Reviews & Ratings</h3>
+                    {selectedViewUser.ratings && selectedViewUser.ratings.length > 0 ? (
+                        <div>
+                            {selectedViewUser.ratings.map(rating => (
+                                <div key={rating.id} style={{
+                                    padding: '10px',
+                                    border: '1px solid #e0e0e0',
+                                    marginBottom: '10px',
+                                    borderRadius: '5px',
+                                    backgroundColor: '#f9f9f9'
+                                }}>
+                                    <p><strong>⭐ {rating.rating}/5 Stars</strong></p>
+                                    {rating.review && <p><em>"{rating.review}"</em></p>}
+                                    <small>Reviewed on {new Date(rating.createdAt).toLocaleDateString()}</small>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p>No reviews yet</p>
+                    )}
+                </div>
+
+                {currentUser && currentUser.id !== selectedViewUser.id && (
+                    <div className="profile-section">
+                        <button 
+                            className="btn btn-success btn-large"
+                            onClick={() => {
+                                setSelectedUser(selectedViewUser.id);
+                                setView('home');
+                            }}
+                        >
+                            Request Skill Swap with {selectedViewUser.name}
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     // Chat view
     const renderChat = () => {
@@ -1059,6 +1209,7 @@ const generateTest = async () => {
                 {view === 'test' && renderTest()}
                 {view === 'register' && renderRegister()}
                 {view === 'profile' && currentUser && renderProfile()}
+                {view === 'public-profile' && renderPublicProfile()}
                 {view === 'chat' && currentUser && renderChat()}
                 {view === 'rating' && currentUser && renderRating()}
                 {view === 'qna' && renderQnA()}
